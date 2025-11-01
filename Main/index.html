@@ -70,9 +70,9 @@
             to { opacity: 1; }
         }
     </style>
-    <!-- 把原来的引入代码，替换成这两行（直接写完整地址，零错误） -->
-<script src="https://pu-94.github.io/CAIT-STUDIO/Main/appwrite-init.js" type="module"></script>
-<script src="https://pu-94.github.io/CAIT-STUDIO/Main/stars.js"></script>
+    <!-- 绝对路径引入脚本（100%正确） -->
+    <script src="https://pu-94.github.io/CAIT-STUDIO/Main/appwrite-init.js" type="module"></script>
+    <script src="https://pu-94.github.io/CAIT-STUDIO/Main/stars.js"></script>
 </head>
 <body>
     <div id="stars-container"></div>
@@ -80,25 +80,24 @@
     <p class="subtitle">欢迎使用账号系统</p>
     
     <div class="user-info" id="userInfo">
-        <!-- 登录状态会通过JS动态渲染 -->
-        未登录 <a href="/CAIT-STUDIO/Main/auth.html" class="btn">点击登录</a>
+        加载中...
     </div>
 
     <script>
-        // 等待所有脚本加载完成再执行
+        // 等待所有脚本加载完成
         window.addEventListener('load', async () => {
             const userInfoEl = document.getElementById('userInfo');
             
             // 检查appwrite是否加载成功
             if (!window.appwrite) {
-                userInfoEl.innerHTML = '加载失败，请刷新页面重试';
+                userInfoEl.innerHTML = 'Appwrite加载失败，请检查文件是否在Main文件夹';
                 return;
             }
 
             try {
-                // 读取当前登录用户信息
+                // 获取当前登录用户
                 const user = await window.appwrite.account.get();
-                // 读取数据库中该用户的十六进制ID
+                // 查询数据库中的用户信息（十六进制ID）
                 const userDocs = await window.appwrite.databases.listDocuments(
                     window.appwrite.dbId,
                     window.appwrite.collId,
@@ -106,7 +105,7 @@
                 );
                 const hexUserId = userDocs.documents[0]?.userId || '未知ID';
 
-                // 渲染登录后的用户信息
+                // 显示登录信息
                 userInfoEl.innerHTML = `
                     当前登录：${user.name} <br>
                     <span class="user-id">ID：${hexUserId}</span> <br>
@@ -116,14 +115,13 @@
                 // 退出登录功能
                 document.getElementById('logoutBtn').addEventListener('click', async () => {
                     await window.appwrite.account.deleteSession('current');
-                    window.location.reload(); // 刷新页面回到未登录状态
+                    window.location.reload();
                 });
             } catch (error) {
-                // 未登录，保持默认提示（跳转登录页）
-                userInfoEl.innerHTML = '未登录 <a href="/CAIT-STUDIO/Main/auth.html" class="btn">点击登录</a>';
+                // 未登录状态
+                userInfoEl.innerHTML = '未登录 <a href="https://pu-94.github.io/CAIT-STUDIO/Main/auth.html" class="btn">点击登录</a>';
             }
         });
     </script>
 </body>
 </html>
-
