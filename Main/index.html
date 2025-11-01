@@ -3,54 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAIT工作室导航</title>
+    <title>CAIT工作室 - 主页</title>
     <style>
-        /* 基础样式重置 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: #000;
             color: #fff;
-            padding-bottom: 5rem; /* 底部留出空间 */
-        }
-        /* 星空背景 */
-        #stars-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-        /* 头部样式 */
-        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
             text-align: center;
-            padding: 3rem 2rem;
-            position: relative;
-            z-index: 1;
         }
-        .logo {
-            font-size: 2.5rem;
+        #stars-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: -1; 
+        }
+        .title {
+            font-size: 3rem;
             margin-bottom: 1rem;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            text-shadow: 0 0 15px rgba(100, 100, 255, 0.8);
         }
-        .header p {
+        .subtitle {
             font-size: 1.2rem;
             color: #ccc;
-            margin: 0.5rem 0;
+            margin-bottom: 3rem;
         }
-        /* 用户信息区域 */
         .user-info {
-            margin: 1.5rem 0;
-            padding: 1rem;
-            background-color: rgba(50, 50, 150, 0.3);
-            border-radius: 8px;
-            display: inline-block;
-            min-width: 300px;
+            background-color: rgba(30, 30, 60, 0.8);
+            padding: 1.5rem 3rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(50, 50, 150, 0.6);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
         }
-        .user-info a { color: #88f; text-decoration: none; }
-        .user-info button {
-            margin-top: 10px;
-            padding: 5px 10px;
-            background-color: rgba(200,50,50,0.8);
-            border: none;
-            border-radius: 4px;
+        .user-id {
+            color: #aaccff;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        .btn {
+            padding: 0.8rem 2rem;
+            background-color: rgba(50, 50, 150, 0.8);
             color: white;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.3s ease;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
         }
-        .user-info button:hover { background-color: rgba(220,70,70,0.9); }
+        .btn:hover {
+            background-color: rgba(80, 80, 200, 0.9);
+            transform: scale(1.05);
+        }
+        @keyframes twinkle {
+            from { opacity: 0.2; }
+            to { opacity: 1; }
+        }
+    </style>
+    <!-- 关键：脚本引入路径适配Main文件夹 -->
+    <script src="/CAIT-STUDIO/Main/appwrite-init.js" type="module"></script>
+    <script src="/CAIT-STUDIO/Main/stars.js"></script>
+</head>
+<body>
+    <div id="stars-container"></div>
+    <h1 class="title">CAIT工作室</h1>
+    <p class="subtitle">欢迎使用账号系统</p>
+    
+    <div class="user-info" id="userInfo">
+        <!-- 登录状态会通过JS动态渲染 -->
+        未登录 <a href="/CAIT-STUDIO/Main/auth.html" class="btn">点击登录</a>
+    </div>
+
+    <script>
+        // 等待所有脚本加载完成再执行
+        window.addEventListener('load', async () => {
+            const userInfoEl = document.getElementById('userInfo');
+            
+            // 检查appwrite是否加载成功
+            if (!window.appwrite) {
+                userInfoEl.innerHTML = '加载失败，请刷新页面重试';
+                return;
+            }
+
+            try {
+                // 读取当前登录用户信息
+                const user = await window.appwrite.account.get();
+                // 读取数据库中该用户的十六进制ID
+                const userDocs = await window.appwrite.databases.listDocuments(
+                    window.appwrite.dbId,
+                    window.appwrite.collId,
+                    [window.appwrite.databases.query.equal('$id', user.$id)]
+                );
+                const hexUserId = userDocs.documents[0]?.userId || '未知ID';
+
+                // 渲染登录后的用户信息
+                userInfoEl.innerHTML = `
+                    当前登录：${user.name} <br>
+                    <span class="user-id">ID：${hexUserId}</span> <br>
+                    <button id="logoutBtn" class="btn" style="margin-top: 1rem;">退出登录</button>
+                `;
+
+                // 退出登录功能
+                document.getElementById('logoutBtn').addEventListener('click', async () => {
+                    await window.appwrite.account.deleteSession('current');
+                    window.location.reload(); // 刷新页面回到未登录状态
+                });
+            } catch (error) {
+                // 未登录，保持默认提示（跳转登录页）
+                userInfoEl.innerHTML = '未登录 <a href="/CAIT-STUDIO/Main/auth.html" class="btn">点击登录</a>';
+            }
+        });
+    </script>
+</body>
+</html>
