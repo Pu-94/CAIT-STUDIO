@@ -1,107 +1,250 @@
-// 等待appwrite-init.js加载完成（关键！）
-window.addEventListener('load', async () => {
-    // 确认appwrite是否已加载
-    if (!window.appwrite) {
-        alert('Appwrite初始化失败，请刷新页面重试');
-        return;
-    }
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账号登录 - CAIT工作室</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        #stars-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .logo {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        .auth-container {
+            background-color: rgba(30, 30, 60, 0.8);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(50, 50, 150, 0.6);
+            width: 100%;
+            max-width: 400px;
+            margin-top: 2rem;
+        }
+        .tabs { display: flex; margin-bottom: 1.5rem; }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem;
+            cursor: pointer;
+            background-color: rgba(50, 50, 150, 0.5);
+            transition: all 0.3s ease;
+        }
+        .tab.active { background-color: rgba(80, 80, 200, 0.8); }
+        .tab:first-child { border-radius: 8px 0 0 8px; }
+        .tab:last-child { border-radius: 0 8px 8px 0; }
+        .form-group { margin-bottom: 1.2rem; }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+        }
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: rgba(50, 50, 150, 0.8);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        button:hover { background-color: rgba(80, 80, 200, 0.9); }
+        .form-panel { display: none; }
+        .form-panel.active { display: block; }
+        .message {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            border-radius: 6px;
+            display: none;
+        }
+        .success { background-color: rgba(0, 255, 0, 0.2); display: block; }
+        .error { background-color: rgba(255, 0, 0, 0.2); display: block; }
+        @keyframes twinkle {
+            from { opacity: 0.2; }
+            to { opacity: 1; }
+        }
+    </style>
+    <!-- 1. 修复脚本引入路径：加上/Main/ -->
+    <script src="/CAIT-STUDIO/Main/appwrite-init.js" type="module"></script>
+    <script src="/CAIT-STUDIO/Main/stars.js"></script>
+</head>
+<body>
+    <div id="stars-container"></div>
+    <div class="logo">CAIT工作室账号系统</div>
+    
+    <div class="auth-container">
+        <div class="tabs">
+            <div class="tab active" data-tab="login">登录</div>
+            <div class="tab" data-tab="register">注册</div>
+        </div>
+        
+        <!-- 登录面板 -->
+        <div id="login-panel" class="form-panel active">
+            <div class="form-group">
+                <label for="login-username">用户名</label>
+                <input type="text" id="login-username" required placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label for="login-password">密码</label>
+                <input type="password" id="login-password" required placeholder="请输入密码">
+            </div>
+            <button id="login-btn">登录</button>
+            <div id="login-message" class="message"></div>
+        </div>
+        
+        <!-- 注册面板 -->
+        <div id="register-panel" class="form-panel">
+            <div class="form-group">
+                <label for="reg-username">用户名</label>
+                <input type="text" id="reg-username" required placeholder="请设置用户名">
+            </div>
+            <div class="form-group">
+                <label for="reg-password">密码</label>
+                <input type="password" id="reg-password" required placeholder="请设置密码">
+            </div>
+            <div class="form-group">
+                <label for="reg-confirm">确认密码</label>
+                <input type="password" id="reg-confirm" required placeholder="请再次输入密码">
+            </div>
+            <button id="register-btn">注册</button>
+            <div id="reg-message" class="message"></div>
+        </div>
+    </div>
 
-    // 初始化星空背景
-    createStars();
+    <script>
+        // 2. 等待所有脚本加载完成再执行（避免appwrite未定义）
+        window.addEventListener('load', async () => {
+            // 检查appwrite是否加载成功
+            if (!window.appwrite) {
+                alert('Appwrite加载失败，请确认文件都在Main文件夹里');
+                return;
+            }
 
-    // 切换登录/注册标签页
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(`${tab.dataset.tab}-panel`).classList.add('active');
-            document.getElementById('login-message').textContent = '';
-            document.getElementById('reg-message').textContent = '';
+            // 初始化星空背景
+            createStars();
+
+            // 切换登录/注册标签页
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(`${tab.dataset.tab}-panel`).classList.add('active');
+                    document.getElementById('login-message').textContent = '';
+                    document.getElementById('reg-message').textContent = '';
+                });
+            });
+
+            // 注册功能
+            document.getElementById('register-btn').addEventListener('click', async () => {
+                const username = document.getElementById('reg-username').value.trim();
+                const password = document.getElementById('reg-password').value;
+                const confirmPwd = document.getElementById('reg-confirm').value;
+                const messageEl = document.getElementById('reg-message');
+
+                // 基础验证
+                if (!username || !password) {
+                    messageEl.textContent = '用户名和密码不能为空';
+                    messageEl.className = 'message error';
+                    return;
+                }
+                if (password.length < 6) {
+                    messageEl.textContent = '密码长度不能少于6位';
+                    messageEl.className = 'message error';
+                    return;
+                }
+                if (password !== confirmPwd) {
+                    messageEl.textContent = '两次输入的密码不一致';
+                    messageEl.className = 'message error';
+                    return;
+                }
+
+                try {
+                    // 调用Appwrite创建账号
+                    const user = await window.appwrite.account.create(
+                        crypto.randomUUID(),
+                        `${username}@cait.com`,
+                        password,
+                        username
+                    );
+
+                    // 生成十六进制ID
+                    const hexUserId = await window.appwrite.generateHexId();
+
+                    // 存入数据库
+                    await window.appwrite.databases.createDocument(
+                        window.appwrite.dbId,
+                        window.appwrite.collId,
+                        user.$id,
+                        { username, userId: hexUserId, createdAt: new Date().toLocaleString() }
+                    );
+
+                    messageEl.textContent = `注册成功！你的专属ID：${hexUserId}`;
+                    messageEl.className = 'message success';
+                    setTimeout(() => document.querySelector('.tab[data-tab="login"]').click(), 2000);
+                } catch (error) {
+                    messageEl.textContent = '注册失败：' + (error.message || '系统错误');
+                    messageEl.className = 'message error';
+                }
+            });
+
+            // 登录功能
+            document.getElementById('login-btn').addEventListener('click', async () => {
+                const username = document.getElementById('login-username').value.trim();
+                const password = document.getElementById('login-password').value;
+                const messageEl = document.getElementById('login-message');
+
+                if (!username || !password) {
+                    messageEl.textContent = '用户名和密码不能为空';
+                    messageEl.className = 'message error';
+                    return;
+                }
+
+                try {
+                    await window.appwrite.account.createEmailSession(
+                        `${username}@cait.com`,
+                        password
+                    );
+                    messageEl.textContent = '登录成功，正在跳转...';
+                    messageEl.className = 'message success';
+                    setTimeout(() => {
+                        // 3. 修复跳转地址：加上/Main/
+                        window.location.href = 'https://pu-94.github.io/CAIT-STUDIO/Main/index.html';
+                    }, 1000);
+                } catch (error) {
+                    messageEl.textContent = '用户名或密码错误';
+                    messageEl.className = 'message error';
+                }
+            });
+
+            // 检查登录状态
+            try {
+                await window.appwrite.account.get();
+                // 修复跳转地址：加上/Main/
+                window.location.href = 'https://pu-94.github.io/CAIT-STUDIO/Main/index.html';
+            } catch (error) {}
         });
-    });
-
-    // 注册功能
-    document.getElementById('register-btn').addEventListener('click', async () => {
-        const username = document.getElementById('reg-username').value.trim();
-        const password = document.getElementById('reg-password').value;
-        const confirmPwd = document.getElementById('reg-confirm').value;
-        const messageEl = document.getElementById('reg-message');
-
-        if (!username || !password) {
-            messageEl.textContent = '用户名和密码不能为空';
-            messageEl.className = 'message error';
-            return;
-        }
-        if (password.length < 6) {
-            messageEl.textContent = '密码长度不能少于6位';
-            messageEl.className = 'message error';
-            return;
-        }
-        if (password !== confirmPwd) {
-            messageEl.textContent = '两次输入的密码不一致';
-            messageEl.className = 'message error';
-            return;
-        }
-
-        try {
-            // 调用Appwrite创建账号（这里会用到window.appwrite.account）
-            const user = await window.appwrite.account.create(
-                crypto.randomUUID(),
-                `${username}@cait.com`,
-                password,
-                username
-            );
-
-            const hexUserId = await window.appwrite.generateHexId();
-
-            await window.appwrite.databases.createDocument(
-                window.appwrite.dbId,
-                window.appwrite.collId,
-                user.$id,
-                { username, userId: hexUserId, createdAt: new Date().toLocaleString() }
-            );
-
-            messageEl.textContent = `注册成功！你的专属ID：${hexUserId}`;
-            messageEl.className = 'message success';
-            setTimeout(() => document.querySelector('.tab[data-tab="login"]').click(), 2000);
-        } catch (error) {
-            messageEl.textContent = '注册失败：' + (error.message || '系统错误');
-            messageEl.className = 'message error';
-        }
-    });
-
-    // 登录功能
-    document.getElementById('login-btn').addEventListener('click', async () => {
-        const username = document.getElementById('login-username').value.trim();
-        const password = document.getElementById('login-password').value;
-        const messageEl = document.getElementById('login-message');
-
-        if (!username || !password) {
-            messageEl.textContent = '用户名和密码不能为空';
-            messageEl.className = 'message error';
-            return;
-        }
-
-        try {
-            await window.appwrite.account.createEmailSession(
-                `${username}@cait.com`,
-                password
-            );
-            messageEl.textContent = '登录成功，正在跳转...';
-            messageEl.className = 'message success';
-            setTimeout(() => {
-                window.location.href = 'https://pu-94.github.io/CAIT-STUDIO/index.html';
-            }, 1000);
-        } catch (error) {
-            messageEl.textContent = '用户名或密码错误';
-            messageEl.className = 'message error';
-        }
-    });
-
-    // 检查登录状态
-    try {
-        await window.appwrite.account.get();
-        window.location.href = 'https://pu-94.github.io/CAIT-STUDIO/index.html';
-    } catch (error) {}
-});
+    </script>
+</body>
+</html>
