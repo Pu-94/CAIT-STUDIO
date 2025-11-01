@@ -1,5 +1,5 @@
-// 引入Appwrite SDK（无需修改）
-import { Client, Account, Databases } from "https://cdn.jsdelivr.net/npm/appwrite@11.0.0";
+// 改用最新稳定版SDK（14.0.1），兼容Account导出
+import { Client, Account, Databases } from "https://cdn.jsdelivr.net/npm/appwrite@14.0.1";
 
 // 初始化客户端（填你的API密钥）
 const client = new Client();
@@ -24,3 +24,4 @@ async function generateHexId() {
 
 // 暴露到window，供auth.html调用
 window.appwrite = { account, databases, generateHexId, dbId: 'cait_users', collId: 'users' };
+
