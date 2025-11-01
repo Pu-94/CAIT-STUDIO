@@ -85,9 +85,9 @@
             to { opacity: 1; }
         }
     </style>
-    <!-- 1. 修复脚本引入路径：加上/Main/ -->
-    <script src="/CAIT-STUDIO/Main/appwrite-init.js" type="module"></script>
-    <script src="/CAIT-STUDIO/Main/stars.js"></script>
+    <!-- 绝对路径引入脚本（100%正确） -->
+    <script src="https://pu-94.github.io/CAIT-STUDIO/Main/appwrite-init.js" type="module"></script>
+    <script src="https://pu-94.github.io/CAIT-STUDIO/Main/stars.js"></script>
 </head>
 <body>
     <div id="stars-container"></div>
@@ -133,11 +133,11 @@
     </div>
 
     <script>
-        // 2. 等待所有脚本加载完成再执行（避免appwrite未定义）
+        // 等待所有脚本加载完成
         window.addEventListener('load', async () => {
             // 检查appwrite是否加载成功
             if (!window.appwrite) {
-                alert('Appwrite加载失败，请确认文件都在Main文件夹里');
+                alert('Appwrite加载失败，请确认文件在Main文件夹');
                 return;
             }
 
@@ -151,8 +151,6 @@
                     document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
                     tab.classList.add('active');
                     document.getElementById(`${tab.dataset.tab}-panel`).classList.add('active');
-                    document.getElementById('login-message').textContent = '';
-                    document.getElementById('reg-message').textContent = '';
                 });
             });
 
@@ -163,7 +161,6 @@
                 const confirmPwd = document.getElementById('reg-confirm').value;
                 const messageEl = document.getElementById('reg-message');
 
-                // 基础验证
                 if (!username || !password) {
                     messageEl.textContent = '用户名和密码不能为空';
                     messageEl.className = 'message error';
@@ -181,7 +178,7 @@
                 }
 
                 try {
-                    // 调用Appwrite创建账号
+                    // 创建用户
                     const user = await window.appwrite.account.create(
                         crypto.randomUUID(),
                         `${username}@cait.com`,
@@ -229,7 +226,6 @@
                     messageEl.textContent = '登录成功，正在跳转...';
                     messageEl.className = 'message success';
                     setTimeout(() => {
-                        // 3. 修复跳转地址：加上/Main/
                         window.location.href = 'https://pu-94.github.io/CAIT-STUDIO/Main/index.html';
                     }, 1000);
                 } catch (error) {
@@ -238,10 +234,9 @@
                 }
             });
 
-            // 检查登录状态
+            // 已登录用户直接跳主页
             try {
                 await window.appwrite.account.get();
-                // 修复跳转地址：加上/Main/
                 window.location.href = 'https://pu-94.github.io/CAIT-STUDIO/Main/index.html';
             } catch (error) {}
         });
